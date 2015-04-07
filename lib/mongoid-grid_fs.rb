@@ -155,7 +155,11 @@
           def put(readable, attributes = {})
             chunks = []
             if (db = attributes.delete(:database))
-              db = Mongoid.sessions[db]['database']
+              if Mongoid.sessions.key?(db)
+                db = Mongoid.sessions[db]['database']
+              else
+                raise "Unknown database #{db}"
+              end
               file_model.store_in :database => db
               chunk_model.store_in :database => db
             end
@@ -256,7 +260,11 @@
               options = { path: options.to_s }
             end
             if (db = options[:database])
-              db = Mongoid.sessions[db]['database']
+              if Mongoid.sessions.key?(db)
+                db = Mongoid.sessions[db]['database']
+              else
+                raise "Unknown database: #{db}"
+              end
               file_model.store_in :database => db
               chunk_model.store_in :database => db
             end
