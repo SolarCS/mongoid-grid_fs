@@ -154,6 +154,11 @@
 
           def put(readable, attributes = {})
             chunks = []
+            if (db = attributes.delete(:database))
+              db = Mongoid.sessions[db]['database']
+              file_model.store_in :database => db
+              chunk_model.store_in :database => db
+            end
             file = file_model.new
             attributes.to_options!
 
@@ -245,14 +250,28 @@
             where(*args).first
           end
 
-          def [](filename)
-            file_model.where(:filename => filename.to_s).first
+          # options was formerly known as "filename"
+          def [](options)
+            if !options.is_a? Hash
+              options = { path: options.to_s }
+            end
+            if (db = options[:database])
+              db = Mongoid.sessions[db]['database']
+              file_model.store_in :database => db
+              chunk_model.store_in :database => db
+            end
+            file_model.where(:filename => options[:path]).first
           end
 
-          def []=(filename, readable)
-            file = self[filename]
+          # options was formerly known as "readable"
+          # it was the file
+          def []=(filename, options)
+            if !options.is_a?(Hash)
+              options = { file: options }
+            end
+            file = self[{path: filename, database: options[:database]}]
             file.destroy if file
-            put(readable, :filename => filename.to_s)
+            put(options[:file], :filename => filename.to_s, :database => options[:database])
           end
 
           def clear
